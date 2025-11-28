@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>正在测试中...</title>
+    <style>
+        /* --- 样式表 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 0; padding: 0;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: #333;
+        }
+        .container {
+            width: 90%; max-width: 450px;
+            background: white; padding: 30px 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            text-align: center;
+            min-height: 650px;
+            display: flex; flex-direction: column;
+            position: relative;
+        }
+        
+        .page { display: none; animation: fadeIn 0.4s ease-out; flex: 1; flex-direction: column; }
+        .active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 进度条 */
+        .progress-bar-bg { height: 8px; background: #edf2f7; border-radius: 4px; margin-bottom: 25px; overflow: hidden; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #667eea, #764ba2); transition: width 0.3s ease; }
+        
+        /* 题目 */
+        #question-text { font-size: 18px; font-weight: 600; color: #1a202c; text-align: left; margin-bottom: 25px; line-height: 1.6; }
+        
+        /* 选项 */
+        .options { text-align: left; flex: 1; }
+        .option-btn {
+            background: #f8f9fa; padding: 18px; margin-bottom: 15px;
+            border-radius: 12px; cursor: pointer;
+            transition: all 0.2s; border: 2px solid transparent;
+            font-size: 15px; color: #4a5568; position: relative;
+        }
+        .option-btn:hover { background: #ebf8ff; border-color: #667eea; }
+        .option-btn.selected { background-color: #e0e7ff; border-color: #667eea; color: #5a67d8; font-weight: bold; }
+        .option-btn.selected::after { content: '✔'; position: absolute; right: 20px; }
+
+        /* 底部导航 */
+        .nav-buttons { display: flex; gap: 15px; margin-top: 20px; }
+        .nav-btn { flex: 1; padding: 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 15px; font-weight: 600; }
+        .btn-prev { background: #edf2f7; color: #718096; }
+        .btn-next { background: #667eea; color: white; box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3); }
+        
+        /* 结果页头像 */
+        .avatar-box {
+            width: 130px; height: 130px; margin: 0 auto 15px;
+            border-radius: 50%; border: 5px solid #764ba2;
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.2);
+            overflow: hidden; background: #fff;
+            display: flex; justify-content: center; align-items: center;
+        }
+        #result-img { width: 100%; height: 100%; object-fit: cover; }
+
+        .result-box { background: #f9fafb; border-radius: 12px; padding: 20px; text-align: left; border: 1px solid #e2e8f0; margin-bottom: 20px; }
+        .tag { display: inline-block; background: #e9d8fd; color: #6b46c1; padding: 4px 10px; border-radius: 6px; font-size: 12px; margin-bottom: 10px; font-weight: bold; }
+        
+        /* 简介文本优化 */
+        #result-text { font-size: 14px; color: #4a5568; line-height: 1.8; }
+        #result-text strong { color: #2d3748; }
+
+        /* 支付锁 */
+        .lock-box { border: 2px dashed #9f7aea; background: #faf5ff; padding: 25px; border-radius: 15px; }
+        .input-code { padding: 14px; border: 2px solid #e9d8fd; border-radius: 8px; width: 70%; font-size: 18px; text-align: center; margin: 15px 0; outline: none; }
+        .unlock-btn { width: 100%; padding: 15px; background: #805ad5; color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <div id="page-quiz" class="page active">
+            <div style="display:flex; justify-content:space-between; font-size:14px; color:#764ba2; margin-bottom:10px; font-weight:bold;">
+                <span>深度探测中...</span>
+                <span><span id="q-current">1</span> / 50</span>
+            </div>
+            <div class="progress-bar-bg"><div id="progress-bar" class="progress-fill"></div></div>
+            
+            <h2 id="question-text">题目加载中...</h2>
+            <div class="options" id="options-container"></div>
+
+            <div class="nav-buttons">
+                <button id="btn-prev" class="nav-btn btn-prev" onclick="prevQuestion()" disabled>上一题</button>
+                <button id="btn-next" class="nav-btn btn-next" onclick="nextQuestion()">下一题</button>
+            </div>
+        </div>
+
+        <div id="page-loading" class="page" style="justify-content:center;">
+            <div style="font-size:60px; animation:spin 1s infinite linear;">⚙️</div>
+            <h2 style="margin-top:20px;">正在生成人格模型...</h2>
+            <p style="color:#718096;">比对荣格八维数据库...</p>
+        </div>
+
+        <div id="page-result" class="page">
+            <div style="font-size:12px; color:#a0aec0; letter-spacing:1px; margin-bottom:15px;">ANALYSIS COMPLETE</div>
+            
+            <div class="avatar-box">
+                <img id="result-img" src="" alt="人格头像">
+            </div>
+            
+            <h1 style="margin:5px 0; color:#2d3748;"><span id="mbti-type" style="color:#764ba2; font-size:48px;">INTJ</span></h1>
+            <p id="mbti-title" style="font-weight:700; color:#4a5568; margin-bottom:20px;">战略大师</p>
+
+            <div class="result-box">
+                <span class="tag">✨ 核心画像</span>
+                <div id="result-text">简介加载中...</div>
+            </div>
+
+            <div class="lock-box" id="lock-area">
+                <h3 style="margin:0;">🔒 解锁 5000 字深度命运书</h3>
+                <p style="font-size:13px; color:#666; margin:10px 0;">包含：潜意识阴影 + 财富赛道 + 灵魂伴侣</p>
+                
+                <input type="text" id="unlock-code" class="input-code" placeholder="输入解锁码">
+                <button class="unlock-btn" onclick="checkCode()">立即解锁查看</button>
+                
+                <div style="margin-top:15px;">
+                    <a href="#" onclick="goPay()" style="color:#805ad5; font-weight:bold; text-decoration:underline;">👉 还没有码？点此获取 (¥9.9)</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // ================= 配置区 =================
+        const BUY_LINK = "https://new.kaijunjs.com/item/2q6a5l"; // 发卡网链接
+        const SECRET_CODE = "888888"; 
+
+        // 16人格数据 (内容已丰富)
+        const results = {
+            "INTJ": { 
+                title: "战略大师 · 建筑师", 
+                desc: "<strong>天赋：</strong>你是人群中稀有的2%，拥有上帝视角的战略思维，能一眼看穿系统的漏洞。<br><br><strong>痛点：</strong>你习惯用冷酷的逻辑防御世界，内心却藏着无人理解的孤独宏图。", 
+                link: "intj.html" 
+            },
+            "INTP": { 
+                title: "逻辑学家 · 思想家", 
+                desc: "<strong>天赋：</strong>你的大脑是永不停歇的宇宙实验室，对抽象真理有着近乎痴迷的追求。<br><br><strong>痛点：</strong>你构建了完美的理论大厦，却常因过度思考而陷入行动瘫痪。", 
+                link: "intp.html" 
+            },
+            "ENTJ": { 
+                title: "指挥官 · 领袖", 
+                desc: "<strong>天赋：</strong>天生的帝王，目光永远锁定最高目标，拥有强悍的资源整合力。<br><br><strong>痛点：</strong>你无法忍受平庸与低效，常因过于强势而感到高处不胜寒。", 
+                link: "entj.html" 
+            },
+            "ENTP": { 
+                title: "辩论家 · 发明家", 
+                desc: "<strong>天赋：</strong>思想界的破坏者，善于在混乱中发现新大陆，永远充满颠覆性的创意。<br><br><strong>痛点：</strong>三分钟热度是你最大的敌人，如果不落地，天才也只是空想。", 
+                link: "entp.html" 
+            },
+            "INFJ": { 
+                title: "先知 · 倡导者", 
+                desc: "<strong>天赋：</strong>最稀有的人格，拥有通灵般的直觉，能看穿面具下最真实的灵魂。<br><br><strong>痛点：</strong>你像一块情绪海绵，吸纳了世人的痛苦，却找不到自己的出口。", 
+                link: "infj.html" 
+            },
+            "INFP": { 
+                title: "治愈师 · 调停者", 
+                desc: "<strong>天赋：</strong>内心住着一个纯净的童话世界，对美与善有着极致的敏感度。<br><br><strong>痛点：</strong>现实的粗糙常让你受伤，你在理想与现实的裂缝中独自徘徊。", 
+                link: "infp.html" 
+            },
+            "ENFJ": { 
+                title: "导师 · 主人公", 
+                desc: "<strong>天赋：</strong>天生的精神领袖，拥有点燃他人潜能的魔力，是团队的粘合剂。<br><br><strong>痛点：</strong>你总是照顾所有人的情绪，却唯独委屈了那个疲惫的自己。", 
+                link: "enfj.html" 
+            },
+            "ENFP": { 
+                title: "竞选者 · 追光者", 
+                desc: "<strong>天赋：</strong>自由的灵魂，拥有无限的热情和感染力，世界对你来说是游乐场。<br><br><strong>痛点：</strong>你渴望深度却又害怕束缚，在无数的可能性中容易迷失方向。", 
+                link: "enfp.html" 
+            },
+            "ISTJ": { 
+                title: "检查员 · 守护者", 
+                desc: "<strong>天赋：</strong>社会的基石，拥有无可比拟的可靠性与执行力，是秩序的维护者。<br><br><strong>痛点：</strong>你背负了太多的责任，严谨的规则有时会成为禁锢你自由的牢笼。", 
+                link: "istj.html" 
+            },
+            "ISFJ": { 
+                title: "守护者 · 保护者", 
+                desc: "<strong>天赋：</strong>最温暖的港湾，拥有细腻的关怀能力，默默守护着身边的一切。<br><br><strong>痛点：</strong>你习惯了付出和隐忍，常常因为不懂拒绝而让自己心力交瘁。", 
+                link: "isfj.html" 
+            },
+            "ESTJ": { 
+                title: "总经理 · 监督者", 
+                desc: "<strong>天赋：</strong>高效的管理者，信奉秩序与传统，能将混乱的局面迅速理清。<br><br><strong>痛点：</strong>你的刚强让你无坚不摧，但也可能因为缺乏柔软而折断了亲密关系。", 
+                link: "estj.html" 
+            },
+            "ESFJ": { 
+                title: "执政官 · 供给者", 
+                desc: "<strong>天赋：</strong>人际关系的润滑剂，热情大方，真心实意地关注他人的幸福。<br><br><strong>痛点：</strong>你太在意别人的评价，有时为了迎合他人而弄丢了真实的自己。", 
+                link: "esfj.html" 
+            },
+            "ISTP": { 
+                title: "鉴赏家 · 巧手匠", 
+                desc: "<strong>天赋：</strong>冷静的技术大神，擅长分析与操作，危机时刻最能力挽狂澜。<br><br><strong>痛点：</strong>你像风一样难以捉摸，这种疏离感常让爱你的人感到无所适从。", 
+                link: "istp.html" 
+            },
+            "ISFP": { 
+                title: "艺术家 · 探险家", 
+                desc: "<strong>天赋：</strong>天生的艺术家，拥有敏锐的感官审美，用行动而非语言表达爱。<br><br><strong>痛点：</strong>你活在当下，却也容易因为缺乏长远规划而陷入对未来的迷茫。", 
+                link: "isfp.html" 
+            },
+            "ESTP": { 
+                title: "挑战者 · 企业家", 
+                desc: "<strong>天赋：</strong>天生的冒险家，行动力爆表，善于捕捉机会，活得热烈而真实。<br><br><strong>痛点：</strong>你追求感官刺激，却很难静下心来面对内心深处的空虚。", 
+                link: "estp.html" 
+            },
+            "ESFP": { 
+                title: "表演者 · 活力派", 
+                desc: "<strong>天赋：</strong>舞台的中心，天生的开心果，拥有让枯燥生活瞬间发光的能力。<br><br><strong>痛点：</strong>你害怕寂寞和冷场，狂欢散场后的落寞是你最难面对的时刻。", 
+                link: "esfp.html" 
+            }
+        };
+
+        // 50道完整题库
+        const questions = [
+          { "text": "经过一周的高强度工作，周五晚上你更倾向于：", "options": [ { "text": "和朋友去酒吧或KTV狂欢", "type": "E" }, { "text": "在家里点个外卖看电影", "type": "I" } ] },
+          { "text": "学习新技能时，你更喜欢：", "options": [ { "text": "按照详细的步骤指南学习", "type": "S" }, { "text": "理解背后的概念和原理，然后自己尝试", "type": "N" } ] },
+          { "text": "做重要决定时，你更依赖：", "options": [ { "text": "逻辑分析和客观事实", "type": "T" }, { "text": "个人价值观和他人感受", "type": "F" } ] },
+          { "text": "处理工作任务时，你倾向于：", "options": [ { "text": "提前制定计划，并严格执行", "type": "J" }, { "text": "灵活应对，根据需要调整", "type": "P" } ] },
+          { "text": "当你在一个新城市旅游时，你更喜欢：", "options": [ { "text": "参加当地的社交活动和聚会", "type": "E" }, { "text": "独自探索安静的小巷和博物馆", "type": "I" } ] },
+          { "text": "当阅读一本书时，你更关注：", "options": [ { "text": "具体的故事情节和细节", "type": "S" }, { "text": "书的主题和象征意义", "type": "N" } ] },
+          { "text": "在团队中，当有分歧时，你优先：", "options": [ { "text": "确保决定是基于理性和效率", "type": "T" }, { "text": "维护团队和谐和人际关系", "type": "F" } ] },
+          { "text": "周末计划通常：", "options": [ { "text": "提前安排好活动", "type": "J" }, { "text": "临时决定做什么", "type": "P" } ] },
+          { "text": "在团队项目中，你通常：", "options": [ { "text": "主动发言，分享想法", "type": "E" }, { "text": "倾听他人，深思熟虑后发言", "type": "I" } ] },
+          { "text": "计划旅行时，你更注重：", "options": [ { "text": "详细的行程安排和景点列表", "type": "S" }, { "text": "大致的想法，留出灵活空间", "type": "N" } ] },
+          { "text": "评价一个想法时，你更注重：", "options": [ { "text": "它的可行性和逻辑一致性", "type": "T" }, { "text": "它的道德影响和情感共鸣", "type": "F" } ] },
+          { "text": "当有多个任务时，你更喜欢：", "options": [ { "text": "列出清单，逐一完成", "type": "J" }, { "text": "同时处理多个任务，随兴趣进行", "type": "P" } ] },
+          { "text": "周末时，你更愿意：", "options": [ { "text": "安排多个社交约会", "type": "E" }, { "text": "留出大量时间独处或与亲密家人相处", "type": "I" } ] },
+          { "text": "在解决问题时，你通常：", "options": [ { "text": "关注当前的事实和数据", "type": "S" }, { "text": "思考未来的可能性和创新方案", "type": "N" } ] },
+          { "text": "当朋友遇到问题时，你通常：", "options": [ { "text": "提供实际的建议和解决方案", "type": "T" }, { "text": "提供情感支持和安慰", "type": "F" } ] },
+          { "text": "旅行时，你更愿意：", "options": [ { "text": "预订好所有酒店和交通工具", "type": "J" }, { "text": "只订大致行程，留有余地", "type": "P" } ] },
+          { "text": "当遇到困难时，你倾向于：", "options": [ { "text": "向朋友倾诉，寻求支持", "type": "E" }, { "text": "自己思考解决，不轻易打扰他人", "type": "I" } ] },
+          { "text": "当描述一个事件时，你倾向于：", "options": [ { "text": "提供具体的时间和地点细节", "type": "S" }, { "text": "分享整体的印象和感受", "type": "N" } ] },
+          { "text": "在工作中，你更欣赏：", "options": [ { "text": "一个公平但严格的老板", "type": "T" }, { "text": "一个体贴但有时优柔寡断的老板", "type": "F" } ] },
+          { "text": "在项目中，你通常：", "options": [ { "text": "在截止日期前早早完成", "type": "J" }, { "text": "在最后一刻冲刺完成", "type": "P" } ] },
+          { "text": "在聚会中，你通常：", "options": [ { "text": "是活跃的中心，与许多人交谈", "type": "E" }, { "text": "与少数人深入交流，或观察他人", "type": "I" } ] },
+          { "text": "在购物时，你更可能：", "options": [ { "text": "仔细比较产品的规格和价格", "type": "S" }, { "text": "根据直觉和品牌印象选择", "type": "N" } ] },
+          { "text": "选择职业时，你更考虑：", "options": [ { "text": "薪资和发展前景", "type": "T" }, { "text": "个人兴趣和价值观匹配", "type": "F" } ] },
+          { "text": "日常生活，你更习惯：", "options": [ { "text": "有固定的作息和时间表", "type": "J" }, { "text": "随性而为，不受约束", "type": "P" } ] },
+          { "text": "当面对新机会时，你倾向于：", "options": [ { "text": "仔细评估后做决定", "type": "J" }, { "text": "立即尝试，看情况调整", "type": "P" } ] },
+          { "text": "当你在一个大型社交活动中，你更可能：", "options": [ { "text": "主动与陌生人交谈并交换联系方式", "type": "E" }, { "text": "只与熟悉的人待在一起或提前离开", "type": "I" } ] },
+          { "text": "当参观一个博物馆时，你倾向于：", "options": [ { "text": "仔细阅读每个展品的说明牌", "type": "S" }, { "text": "快速浏览，捕捉整体主题和印象", "type": "N" } ] },
+          { "text": "当朋友做出一个你不同意的决定时，你更可能：", "options": [ { "text": "理性地分析为什么这个决定可能不好", "type": "T" }, { "text": "先考虑他们的感受，避免伤害关系", "type": "F" } ] },
+          { "text": "当有一个长期项目时，你更喜欢：", "options": [ { "text": "制定详细的时间表和里程碑", "type": "J" }, { "text": "保持灵活，随着进展调整计划", "type": "P" } ] },
+          { "text": "在假期中，你更享受：", "options": [ { "text": "参加各种旅游团和集体活动", "type": "E" }, { "text": "独自或与伴侣安静地放松", "type": "I" } ] },
+          { "text": "当学习一门新语言时，你更喜欢：", "options": [ { "text": "从语法和词汇开始学习", "type": "S" }, { "text": "通过对话和沉浸式体验学习", "type": "N" } ] },
+          { "text": "当购买一件商品时，你更基于：", "options": [ { "text": "性价比和功能分析", "type": "T" }, { "text": "个人喜好和情感连接", "type": "F" } ] },
+          { "text": "当安排一周的日程时，你更喜欢：", "options": [ { "text": "提前规划好每天的活动", "type": "J" }, { "text": "只记下重要事项，灵活安排", "type": "P" } ] },
+          { "text": "当在公共交通工具上，你通常：", "options": [ { "text": "与邻座交谈", "type": "E" }, { "text": "戴耳机听音乐或看书", "type": "I" } ] },
+          { "text": "当解决一个数学问题时，你倾向于：", "options": [ { "text": "一步步计算确保准确", "type": "S" }, { "text": "寻找模式和捷径", "type": "N" } ] },
+          { "text": "当给朋友建议时，你更可能：", "options": [ { "text": "提供事实和逻辑分析", "type": "T" }, { "text": "分享个人经验和情感支持", "type": "F" } ] },
+          { "text": "当准备一个演讲时，你通常：", "options": [ { "text": "提前写好讲稿并练习", "type": "J" }, { "text": "只准备要点，即兴发挥", "type": "P" } ] },
+          { "text": "当在健身房，你更喜欢：", "options": [ { "text": "参加团体课程", "type": "E" }, { "text": "独自训练", "type": "I" } ] },
+          { "text": "当回忆一个事件时，你更记得：", "options": [ { "text": "具体的对话和细节", "type": "S" }, { "text": "整体的氛围和感受", "type": "N" } ] },
+          { "text": "当处理冲突时，你优先：", "options": [ { "text": "澄清事实和解决问题", "type": "T" }, { "text": "安抚情绪和恢复关系", "type": "F" } ] },
+          { "text": "当管理财务时，你倾向于：", "options": [ { "text": "制定预算并跟踪支出", "type": "J" }, { "text": "大致管理，不严格记录", "type": "P" } ] },
+          { "text": "当在餐厅点餐时，你更可能：", "options": [ { "text": "与服务员聊天并询问推荐", "type": "E" }, { "text": "快速决定，避免互动", "type": "I" } ] },
+          { "text": "当学习历史时，你更感兴趣于：", "options": [ { "text": "具体的事件和日期", "type": "S" }, { "text": "历史的趋势和影响", "type": "N" } ] },
+          { "text": "当评估一个政策时，你更注重：", "options": [ { "text": "它的效率和效果", "type": "T" }, { "text": "它对人们的影响", "type": "F" } ] },
+          { "text": "当处理意外事件时，你倾向于：", "options": [ { "text": "立即制定新计划", "type": "J" }, { "text": "适应情况，见机行事", "type": "P" } ] },
+          { "text": "当在线上社交平台，你更活跃于：", "options": [ { "text": "公开发帖和评论", "type": "E" }, { "text": "私信或小群聊天", "type": "I" } ] },
+          { "text": "当装饰房间时，你更喜欢：", "options": [ { "text": "遵循一个主题和详细计划", "type": "S" }, { "text": "混合风格，创造独特氛围", "type": "N" } ] },
+          { "text": "当帮助别人时，你更可能：", "options": [ { "text": "提供实际的解决方案", "type": "T" }, { "text": "提供情感上的安慰", "type": "F" } ] },
+          { "text": "当学习一个新软件时，你通常：", "options": [ { "text": "阅读所有教程和文档", "type": "J" }, { "text": "直接使用，遇到问题再查", "type": "P" } ] },
+          { "text": "当在会议上，你更经常：", "options": [ { "text": "主动提出想法和问题", "type": "E" }, { "text": "倾听并后补意见", "type": "I" } ] }
+        ];
+
+        // ================= 核心逻辑 =================
+        let currentQuestion = 0;
+        // 存储用户的选择，数组索引对应题目ID，值是选项类型 (E, I, S, N...)
+        let userAnswers = new Array(questions.length).fill(null);
+        let finalType = "";
+
+        window.onload = function() {
+            renderQuestion();
+        };
+
+        function showPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function renderQuestion() {
+            const q = questions[currentQuestion];
+            if (!q) return;
+            
+            document.getElementById('question-text').innerText = q.text;
+            document.getElementById('q-current').innerText = currentQuestion + 1;
+            document.getElementById('progress-bar').style.width = ((currentQuestion + 1) / questions.length) * 100 + '%';
+
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            
+            q.options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'option-btn';
+                if (userAnswers[currentQuestion] === opt.type) {
+                    btn.classList.add('selected');
+                }
+                
+                btn.innerText = opt.text;
+                btn.onclick = () => {
+                    userAnswers[currentQuestion] = opt.type;
+                    document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                    setTimeout(() => {
+                        nextQuestion();
+                    }, 300);
+                };
+                container.appendChild(btn);
+            });
+
+            document.getElementById('btn-prev').disabled = (currentQuestion === 0);
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                renderQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            if (!userAnswers[currentQuestion]) {
+                alert("请先选择一个选项");
+                return;
+            }
+
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            showPage('page-loading');
+            
+            // 重新计算总分
+            let scores = { E:0, I:0, S:0, N:0, T:0, F:0, J:0, P:0 };
+            userAnswers.forEach(type => {
+                if (type && scores.hasOwnProperty(type)) {
+                    scores[type]++;
+                }
+            });
+
+            // 计算结果
+            let mbti = "";
+            mbti += (scores.E >= scores.I) ? "E" : "I";
+            mbti += (scores.S >= scores.N) ? "S" : "N";
+            mbti += (scores.T >= scores.F) ? "T" : "F";
+            mbti += (scores.J >= scores.P) ? "J" : "P";
+            finalType = mbti;
+
+            setTimeout(() => {
+                showResult(finalType);
+            }, 2000);
+        }
+
+        function showResult(type) {
+            showPage('page-result');
+            const data = results[type] || { title: "未知", desc: "异常" };
+            
+            document.getElementById('mbti-type').innerText = type;
+            document.getElementById('mbti-title').innerText = data.title;
+            // 这里的innerHTML允许读取我们设置的<strong>标签
+            document.getElementById('result-text').innerHTML = data.desc; 
+
+            // 动态设置图片位置
+            var imgName = type.toLowerCase() + ".jpg";
+            document.getElementById('result-img').src = imgName;
+
+            document.getElementById('lock-area').style.display = 'block';
+            document.getElementById('unlock-code').value = '';
+        }
+
+        function goPay() { window.open(BUY_LINK, '_blank'); }
+
+        function checkCode() {
+            const input = document.getElementById('unlock-code').value.trim();
+            if (input === SECRET_CODE) {
+                const targetUrl = results[finalType].link;
+                if(targetUrl) {
+                    alert("解锁成功！即将为您展示深度报告...");
+                    window.location.href = targetUrl;
+                } else {
+                    alert("报告文件加载失败");
+                }
+            } else {
+                alert("解锁码错误");
+            }
+        }
+
+        // 旋转动画
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes spin { 100% { -webkit-transform: rotate(360deg); transform:rotate(360deg); } }`;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
