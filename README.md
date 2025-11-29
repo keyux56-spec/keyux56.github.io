@@ -1,1 +1,224 @@
-# keyux56.github.io
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI深度MBTI命运解码</title>
+    <style>
+        /* --- 首页专用高端样式 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        @media (min-width: 481px) {
+            .container {
+                border-radius: 24px;
+                min-height: 800px;
+                margin: 20px 0;
+                height: auto;
+            }
+        }
+
+        /* 顶部大图区 */
+        .hero-banner {
+            /* 背景改淡一点，突出头像颜色 */
+            background: linear-gradient(180deg, #f3e7ff 0%, #e3f2fd 100%);
+            padding: 50px 20px 40px;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            margin-bottom: 30px;
+        }
+        
+        .hero-img-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px; /* 间距 */
+            margin-bottom: 25px;
+        }
+        
+        /* 头像通用样式 */
+        .hero-char {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background-size: cover;
+            background-position: center;
+            border: 3px solid #fff; /* 内白圈 */
+            position: relative;
+            transition: transform 0.3s ease;
+        }
+        .hero-char:hover { transform: scale(1.1); z-index: 2; }
+
+        /* 四大色系样式 (图片+光环) */
+        
+        /* 1. 分析家 (紫色) - INTJ */
+        .type-purple {
+            background-image: url('intj.jpg'); 
+            box-shadow: 0 0 0 2px #88619a, 0 8px 15px rgba(136, 97, 154, 0.3);
+        }
+        
+        /* 2. 外交家 (绿色) - INFJ */
+        .type-green {
+            background-image: url('infj.jpg');
+            box-shadow: 0 0 0 2px #33a474, 0 8px 15px rgba(51, 164, 116, 0.3);
+        }
+
+        /* 3. 守护者 (蓝色) - ISTJ */
+        .type-blue {
+            background-image: url('istj.jpg');
+            box-shadow: 0 0 0 2px #4298b4, 0 8px 15px rgba(66, 152, 180, 0.3);
+        }
+
+        /* 4. 探险家 (黄色) - ESTP */
+        .type-yellow {
+            background-image: url('estp.jpg');
+            box-shadow: 0 0 0 2px #e4ae3a, 0 8px 15px rgba(228, 174, 58, 0.3);
+        }
+
+        .hero-title {
+            font-size: 32px;
+            font-weight: 900;
+            color: #2d3748;
+            margin: 15px 0 5px;
+            letter-spacing: -1px;
+        }
+        .hero-subtitle {
+            font-size: 15px;
+            color: #4a5568;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+        .stats-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.8);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #553c9a;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        /* 卖点卡片 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 0 25px;
+            margin-bottom: 25px;
+        }
+        .feature-card {
+            background: #f9fafb;
+            padding: 18px 15px;
+            border-radius: 16px;
+            text-align: left;
+            border: 1px solid #edf2f7;
+            transition: transform 0.2s;
+        }
+        .feature-card:hover { transform: translateY(-3px); }
+        .f-icon { font-size: 26px; margin-bottom: 10px; display: block; }
+        .f-title { font-size: 15px; font-weight: bold; color: #2d3748; display: block; margin-bottom: 5px; }
+        .f-desc { font-size: 12px; color: #718096; line-height: 1.4; }
+
+        /* 底部操作区 */
+        .action-area {
+            padding: 0 30px 40px;
+            margin-top: auto;
+        }
+        .btn {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 20px 30px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(118, 75, 162, 0.3);
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+        }
+        .btn:active { transform: scale(0.98); }
+        
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shine 3s infinite;
+        }
+        @keyframes shine { 100% { left: 100%; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="hero-banner">
+            <div class="hero-img-group">
+                <div class="hero-char type-purple"></div>
+                <div class="hero-char type-green"></div>
+                <div class="hero-char type-blue"></div>
+                <div class="hero-char type-yellow"></div>
+            </div>
+            
+            <div class="stats-badge">🔥 342,109 人已获取深度报告</div>
+            <h1 class="hero-title">MBTI 深度命运解码</h1>
+            <p class="hero-subtitle">揭开你潜意识底色的 90% 未知领域</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <span class="f-icon">📊</span>
+                <span class="f-title">荣格八维</span>
+                <span class="f-desc">基于心理学经典模型，精准分析认知功能。</span>
+            </div>
+            <div class="feature-card">
+                <span class="f-icon">💰</span>
+                <span class="f-title">搞钱指南</span>
+                <span class="f-desc">发掘你的天赋优势，找到最适合的财富赛道。</span>
+            </div>
+            <div class="feature-card">
+                <span class="f-icon">💞</span>
+                <span class="f-title">情感配对</span>
+                <span class="f-desc">解析你的恋爱模式，找到真正的灵魂伴侣。</span>
+            </div>
+            <div class="feature-card">
+                <span class="f-icon">🔒</span>
+                <span class="f-title">万字报告</span>
+                <span class="f-desc">解锁5000+字深度解析，包含阴暗面与建议。</span>
+            </div>
+        </div>
+
+        <div class="action-area">
+            <button class="btn" onclick="window.location.href='quiz.html'">立即开始测试</button>
+            <p style="font-size: 12px; color: #a0aec0; margin-top: 15px;">预计耗时 5-8 分钟 · 保证结果隐私</p>
+        </div>
+    </div>
+
+</body>
+</html>
